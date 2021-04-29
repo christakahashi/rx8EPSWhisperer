@@ -6,6 +6,9 @@
 	for use with ATmegaxxM1 devices. Use of this file is subject to Atmel's 
 	End User License Agreement.
  
+	NOTE from user: these files came from:
+	https://www.digikey.com/eewiki/display/microcontroller/CAN+Example+-+ATmega32M1+-+STK600
+	I cannot find the license.txt that was referenced below as it was not included.
  */ 
 
 //******************************************************************************

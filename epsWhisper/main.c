@@ -11,20 +11,23 @@
 #include <util/delay.h>
 #include "can_lib.h" 
 
+//utility to convert kph to the 2byte can 
+#define KPH2SIG(x) ( (uint16_t)((x*100)+10000) )
+
 st_cmd_t msg201;
 //load with default known working values.
-uint8_t payload[8] = {0x0d,0xd4,0xff,0xff,0x2e,0xe0,0x14,0xff};
+uint8_t payload[8] = {0x0d,0xd4,0xff,0xff,0x27,0x10,0x14,0xff};
 
 
 void suart_tx(uint8_t);
 void init_suart();
 void init_ADC(void);
 uint8_t read_ADC(void);
+void print_byte(uint8_t ad);
 
 int main(void)
 { 
 	uint8_t ad;
-	char c;
 	//just in case make sure the clk is unscaled.
 	CLKPR = 0x80;
 	CLKPR = 0x00;
@@ -38,6 +41,9 @@ int main(void)
 	 
     while (1) {
 
+		ad = read_ADC()>>2;
+		payload[4] =0x27+ad;  //0-100mph.
+		
 		msg201.pt_data = payload;
 		msg201.ctrl.ide = 0; //2.0A std frame.
 		msg201.dlc = sizeof(payload); //number of bytes sent.
@@ -45,23 +51,40 @@ int main(void)
 		msg201.cmd = CMD_TX; 
 		//spin on cmd until accepted, should never spin in my code though
 		// as I'm not sending a lot of messages and the bus should be mostly free.
-		while(can_cmd(&msg201) != CAN_CMD_ACCEPTED);
-
-		 
-		ad = read_ADC();
-#if 0
-		//some testing stuff
-		if ( (ad>>4 &0x0f) >9){
-			c = (ad>>4 &0x0f)-10+'A';
-		} else {
-			c = (ad>>4 &0x0f)+'0';
-		}
-		suart_tx(c);
-#endif 
 		
-		_delay_ms(100); //send every 10ms TODO: make this exactly periodic
+		while(can_cmd(&msg201) != CAN_CMD_ACCEPTED);
+		
+		
+		
+		//print_byte(ad);
+		//suart_tx('\n');
+
+
+		//send every 100ms TODO: make this exactly periodic
+		// supposed to be 10ms, but 100ms is fine and will save some power(heat).
+		_delay_ms(100); 
+		
+		//call needed no matter what.  it frees the message.
+		while(can_get_status(&msg201) == CAN_STATUS_NOT_COMPLETED); // Wait for Tx to complete
 		
 	}
+}
+
+void print_byte(uint8_t ad){
+	char c;
+	//some testing stuff
+	if ( (ad>>4 &0x0f) >9){
+		c = (ad>>4 &0x0f)-10+'A';
+		} else {
+		c = (ad>>4 &0x0f)+'0';
+	}
+	suart_tx(c);
+	if ( (ad & 0x0f) >9){
+		c = (ad  &0x0f)-10+'A';
+		} else {
+		c = (ad  &0x0f)+'0';
+	}
+	suart_tx(c);
 }
 
 void init_ADC() {
