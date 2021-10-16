@@ -17,7 +17,7 @@
 st_cmd_t msg201;
 //load with default known working values.
 uint8_t payload[8] = {0x0d,0xd4,0xff,0xff,0x27,0x10,0x14,0xff};
-
+	
 
 void suart_tx(uint8_t);
 void init_suart();
@@ -28,6 +28,7 @@ void print_byte(uint8_t ad);
 int main(void)
 { 
 	uint8_t ad;
+	uint8_t adcVal;
 	//just in case make sure the clk is unscaled.
 	CLKPR = 0x80;
 	CLKPR = 0x00;
@@ -40,8 +41,8 @@ int main(void)
 	
 	 
     while (1) {
-
-		ad = read_ADC()>>2;
+		adcVal = read_ADC();
+		ad = adcVal>>2;
 		payload[4] =0x27+ad;  //0-100mph.
 		
 		msg201.pt_data = payload;
@@ -88,8 +89,8 @@ void print_byte(uint8_t ad){
 }
 
 void init_ADC() {
-	//Avcc no ext cap.  ADC port 6.  left align bytes.
-	ADMUX =  (1<<REFS0)| (1<<ADLAR) | (1<<MUX2) | (1<<MUX1);
+	//Avcc no ext cap.  ADC port 7.  left align bytes.
+	ADMUX =  (1<<REFS0)| (1<<ADLAR) | (1<<MUX2) | (1<<MUX1) | (1<<MUX0);
 	DIDR0 = 1<<ADC6D; //turn off digital input on adc6 
 	//enable adc, set clk 125khz
 	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1); 
